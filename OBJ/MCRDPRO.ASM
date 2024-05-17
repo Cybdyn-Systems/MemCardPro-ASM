@@ -163,7 +163,7 @@ MemCardPro_Ping:
 	
 	; BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
+	lui		a0, 0x01					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
 	;li		a0, JOY_DELAY_COUNTER
@@ -468,7 +468,7 @@ MemCardPro_PrevCH:
 	
 	; BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
+	lui		a0, 0x01					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
 	;li		a0, JOY_DELAY_COUNTER
@@ -622,7 +622,7 @@ MemCardPro_NextCH:
 	
 	; BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 00						; [DELAY SLOT]
+	lui		a0, 0x01					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
 	;li		a0, JOY_DELAY_COUNTER
@@ -650,12 +650,26 @@ MemCardPro_NextCH:
 
 ; handler/processor
 ; a0 = byte to send
+; a0 & 0x000010000 == final byte in the sequnce, do not wait for /ACK
 MemCardPro_Exchng:
 
 	addiu	sp, -8
 	sw		ra, 0(sp)
 	sw		a0, 4(sp)
 	
+	; We don't need to /ACK the final byte in a sequence
+	; so we can return early if this bit is set.
+	lui		t0, 0x01
+	li		t1,	0x00
+	and		t0,	a0,	t0
+	beqz	t0,	.Lno_final_byte
+	nop
+
+	; It's the last byte in the sequence, so
+	; set t1 for an early return
+	li		t1,0x01
+
+.Lno_final_byte	
 
 	lui		t0, IOBASE
 
@@ -667,6 +681,10 @@ MemCardPro_Exchng:
 	nop
 	andi	v0, 0x4 ; JOY_STAT value
 	beqz	v0, .Lsend_wait_exchg
+	nop
+
+	; Early return without /ACK
+	bnez	t1, .Ldone
 	nop
 
 	lui		a0, 0xBFC0
