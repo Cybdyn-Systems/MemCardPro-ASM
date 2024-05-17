@@ -65,7 +65,7 @@ MemCardPro_Ping:
 	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
 	
 	jal		MemCardPro_Wait				; Delay for analog pads (needs to be tested)
-	li		t1, JOY_DELAY_COUNTER
+	li		a0, JOY_DELAY_COUNTER
 .Lread_empty_fifo_write:				; Flush the RX FIFO just in case
 	lbu		v1, JOY_TXRX(t0)
 	lhu		v0, JOY_STAT(t0)
@@ -84,7 +84,7 @@ MemCardPro_Ping:
 	li		a0, 0x81					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -98,7 +98,7 @@ MemCardPro_Ping:
 	li		a0, 0x20					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -124,7 +124,7 @@ MemCardPro_Ping:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -138,7 +138,7 @@ MemCardPro_Ping:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -152,7 +152,7 @@ MemCardPro_Ping:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -166,7 +166,7 @@ MemCardPro_Ping:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -221,7 +221,7 @@ MemCardPro_SendGameID:
 	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
 	
 	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
+	li		a0, JOY_DELAY_COUNTER
 .Lread_empty_fifo_write:				; Flush the RX FIFO just in case
 	lbu		v1, JOY_TXRX(t0)
 	lhu		v0, JOY_STAT(t0)
@@ -240,7 +240,7 @@ MemCardPro_SendGameID:
 	li		a0, 0x81					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -254,7 +254,7 @@ MemCardPro_SendGameID:
 	li		a0, 0x21					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -280,7 +280,7 @@ MemCardPro_SendGameID:
 	;li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -294,7 +294,7 @@ MemCardPro_SendGameID:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -308,7 +308,7 @@ MemCardPro_SendGameID:
 	move	a0, a1						; copy a1 to a0 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -364,7 +364,7 @@ MemCardPro_PrevCH:
 	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
 	
 	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
+	li		a0, JOY_DELAY_COUNTER
 .Lread_empty_fifo_write:				; Flush the RX FIFO just in case
 	lbu		v1, JOY_TXRX(t0)
 	lhu		v0, JOY_STAT(t0)
@@ -383,7 +383,7 @@ MemCardPro_PrevCH:
 	li		a0, 0x81					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -397,7 +397,7 @@ MemCardPro_PrevCH:
 	li		a0, 0x22					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -426,7 +426,7 @@ MemCardPro_PrevCH:
 	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -443,7 +443,7 @@ MemCardPro_PrevCH:
 	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -457,7 +457,7 @@ MemCardPro_PrevCH:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -471,7 +471,7 @@ MemCardPro_PrevCH:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -518,7 +518,7 @@ MemCardPro_NextCH:
 	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
 	
 	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
+	li		a0, JOY_DELAY_COUNTER
 .Lread_empty_fifo_write:				; Flush the RX FIFO just in case
 	lbu		v1, JOY_TXRX(t0)
 	lhu		v0, JOY_STAT(t0)
@@ -537,7 +537,7 @@ MemCardPro_NextCH:
 	li		a0, 0x81					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -551,7 +551,7 @@ MemCardPro_NextCH:
 	li		a0, 0x23					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -580,7 +580,7 @@ MemCardPro_NextCH:
 	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -597,7 +597,7 @@ MemCardPro_NextCH:
 	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -611,7 +611,7 @@ MemCardPro_NextCH:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -622,10 +622,10 @@ MemCardPro_NextCH:
 	
 	; BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
+	li		a0, 00						; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -649,19 +649,26 @@ MemCardPro_NextCH:
 
 
 ; handler/processor
+; a0 = byte to send
 MemCardPro_Exchng:
+
+	addiu	sp, -8
+	sw		ra, 0(sp)
+	sw		a0, 4(sp)
 	
+
 	lui		t0, IOBASE
-	
+
 	sb		a0, JOY_TXRX(t0)
 	nop
+
 .Lsend_wait_exchg:
 	lhu		v0, JOY_STAT(t0)
 	nop
 	andi	v0, 0x4 ; JOY_STAT value
 	beqz	v0, .Lsend_wait_exchg
 	nop
-	
+
 	lui		a0, 0xBFC0
 	move	v1, r0 ; set v1 to zero
 .Lwait_ack_exchg:
@@ -692,21 +699,24 @@ MemCardPro_Exchng:
 	; Add a standard delay to pad us out to about 18us
 	; Not strictly necessary, but it's not a noticable delay
 	; and falls roughly in line with other implementations
+	; Note
 
-	li		v1, 0x70
-.Lpost_wait_exch
-	subiu	v1,	1
-	bnez	v1,	.Lpost_wait_exch
-	nop
+	jal MemCardPro_Wait
+	li		a0,0x70
 
+	lw		ra, 0(sp)
+	lw		a0, 4(sp)
+	nop		
+	addiu	sp, 8
 	jr		ra
 	nop
 
 
 ; simple delay loop (each instruction adds 1 cycle so a wait of 150 in t1 results in 500 cycles)
+; a0 = delay
 MemCardPro_Wait:
-    addiu   t1, -1
-    bgtz    t1, MemCardPro_Wait
+    addiu   a0, -1
+    bgtz    a0, MemCardPro_Wait
     nop
 	
     jr      ra
