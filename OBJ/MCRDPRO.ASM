@@ -608,6 +608,7 @@ MemCardPro_NextCH:
 
 ; handler/processor
 MemCardPro_Exchng:
+	
 	lui		t0, IOBASE
 	
 	sb		a0, JOY_TXRX(t0)
@@ -645,6 +646,17 @@ MemCardPro_Exchng:
 	or		v1, 0x10
 	sh		v1, JOY_CTRL(t0)
 .Lexit_exchg:
+
+	; Add a standard delay to pad us out to about 18us
+	; Not strictly necessary, but it's not a noticable delay
+	; and falls roughly in line with other implementations
+
+	li		v1, 0x70
+.Lpost_wait_exch
+	subiu	v1,	1
+	bnez	v1,	.Lpost_wait_exch
+	nop
+
 	jr		ra
 	nop
 
