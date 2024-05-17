@@ -403,8 +403,20 @@ MemCardPro_PrevCH:
 	;b		.Lerror
 	;nop
 	
-	bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
+	; This response may be 0x00 or 0x08 (MCPro and regular cards)
+	; Depending on when you do the ping, so we can accept both
+
+	beqz	v0,	.Lvalidresponse			; We got the 0x00 ping response
+	nop
+
+	subiu	v0,	0x08					; We got the 0x08 ping response
+	beqz	v0,	.Lvalidresponse
+	nop
+
+	b		.Lerror 					; If we do not get 0x00 back, branch
 	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
+
+.Lvalidresponse
 	
 	; BYTE 2 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send 'reserved'
@@ -545,8 +557,20 @@ MemCardPro_NextCH:
 	;b		.Lerror
 	;nop
 	
-	bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
+	; This response may be 0x00 or 0x08 (MCPro and regular cards)
+	; Depending on when you do the ping, so we can accept both
+
+	beqz	v0,	.Lvalidresponse			; We got the 0x00 ping response
+	nop
+
+	subiu	v0,	0x08					; We got the 0x08 ping response
+	beqz	v0,	.Lvalidresponse
+	nop
+
+	b		.Lerror 					; If we do not get 0x00 back, branch
 	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
+
+.Lvalidresponse
 	
 	; BYTE 2 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send 'reserved'
