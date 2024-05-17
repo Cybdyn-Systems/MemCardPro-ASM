@@ -31,8 +31,8 @@
 	global MemCardPro_SendGameID
 	global MemCardPro_PrevCH
 	global MemCardPro_NextCH
-	global MemCardPro_PrevDIR	; TODO (DOESN'T WORK ON THE MEMCARD PRO FIRMWARE YET)
-	global MemCardPro_NextDIR	; TODO (DOESN'T WORK ON THE MEMCARD PRO FIRMWARE YET)
+	global MemCardPro_PrevDIR
+	global MemCardPro_NextDIR
 	global MemCardPro_Wait
 	global MemCardPro_Exchng
 	global MemcardPro_SimpleCommand
