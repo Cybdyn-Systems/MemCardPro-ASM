@@ -205,6 +205,12 @@ MemCardPro_SendGameID:
 	addiu	sp, -4
 	sw		ra, 0(sp)
 
+	; Add 1 to the string length to include a trailing 0
+	; without passing that burdern to the caller
+	; i.e. allow the developer to pass strlen(gameid)
+	; (MCPro still accepts the unterminated packet but this is cleaner)
+	addiu	a1,	1
+
 	lui		t0, IOBASE
 	
 	li		v0, 0x1003					; TX Enable, joypad port select
