@@ -345,8 +345,6 @@ MemcardPro_SimpleCommand:
 
 
 
-
-
 ; arguments:
 ;	a0 (port number)
 ;
@@ -556,6 +554,7 @@ MemCardPro_Exchng:
 	nop
 
 
+
 ; simple delay loop (each instruction adds 1 cycle so a wait of 150 in t1 results in 500 cycles)
 ; a0 = delay
 MemCardPro_Wait:
@@ -565,6 +564,8 @@ MemCardPro_Wait:
 	
     jr      ra
     nop
+
+
 
 ; No params, will wait long enough to do a ping followed by a 
 ; SendGameID on the same frame
