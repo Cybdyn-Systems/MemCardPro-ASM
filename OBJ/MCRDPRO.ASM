@@ -198,6 +198,7 @@ MemCardPro_SendGameID:
 ; a0 = port number
 ; a1 = 0x22, 0x23, 0x24, or 0x24 to increment or decrement channels.
 ; a2 = expected response (0x27 for ping, 0x20 for channel/dir switches) 
+; a2 & 0x100 = response is actually required
 MemcardPro_SimpleCommand:
 
 	addiu	sp, -4
@@ -312,9 +313,19 @@ MemcardPro_SimpleCommand:
 	;b		.Lerror
 	;nop
 	
+	; Do we need a response for this packet type?
+	; Ping should always return 0x27
+	; But older/bugged firmwares may not return 0x20
+	; for directory switching, let's cover those cases
+	andi	a0,	a2,	0x100
+	beqz	a0, .Lresponse_not_required
+	nop
+
+	andi	a2,	a2, 0xFF
 	bne		v0,	a2, .Lerror 			; If we do not get 0x20/0x27 back, branch
 	addiu	v0, r0, 4					; Return a value of 4 [DELAY SLOT]
 	
+.Lresponse_not_required	
 	; BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			; Send the 'termination signal'
 	; Load 0x01 into the high word, since it's the last byte in the sequence
@@ -360,7 +371,7 @@ MemCardPro_Ping:
 	addiu	sp, -4
 	sw		ra, 0(sp)
 	
-	li		a2, 0x27
+	li		a2, 0x127
 	jal		MemcardPro_SimpleCommand
 	li 		a1,	0x20
 	
