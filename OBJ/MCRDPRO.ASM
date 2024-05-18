@@ -31,150 +31,16 @@
 	global MemCardPro_SendGameID
 	global MemCardPro_PrevCH
 	global MemCardPro_NextCH
-	global MemCardPro_PrevDIR	; TODO (DOESN'T WORK ON THE MEMCARD PRO FIRMWARE YET)
-	global MemCardPro_NextDIR	; TODO (DOESN'T WORK ON THE MEMCARD PRO FIRMWARE YET)
+	global MemCardPro_PrevDIR
+	global MemCardPro_NextDIR
 	global MemCardPro_Wait
 	global MemCardPro_Exchng
+	global MemcardPro_SimpleCommand
+	global MemcardPro_InterCommandDelay
 
 
 ; VARIABLES
 JOY_DELAY_COUNTER equ 170		; 170 * 3 instructions = 510 cycles
-
-
-; arguments:
-;	a0 (port number)
-;
-; return values:
-;	0 = no error (MemCard Pro detected)
-;	1 = bus select fail (no memory card device detected)
-;	2 = ping fail (no response from the MemCard Pro)
-;	3 = reserve fail (reserved for future use (ignore this))
-;	4 = card present fail (no card is present)
-;	5 = termination signal fail (no termination signal detected)
-MemCardPro_Ping:
-	addiu	sp, -4
-	sw		ra, 0(sp)
-
-	lui		t0, IOBASE
-	
-	li		v0, 0x1003					; TX Enable, joypad port select
-	andi	a0, 1
-	sll		a0, 13
-	or		v0, a0						; Select port 2 if a0 is 1
-	
-	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
-	
-	jal		MemCardPro_Wait				; Delay for analog pads (needs to be tested)
-	li		t1, JOY_DELAY_COUNTER
-.Lread_empty_fifo_write:				; Flush the RX FIFO just in case
-	lbu		v1, JOY_TXRX(t0)
-	lhu		v0, JOY_STAT(t0)
-	nop
-	andi	v0, 0x2
-	bnez	v0, .Lread_empty_fifo_write
-	nop
-	
-	lhu		v1, JOY_CTRL(t0)
-	nop
-	or		v1, 0x10
-	sh		v1, JOY_CTRL(t0)
-	
-	; BYTE 0 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'bus select' byte
-	li		a0, 0x81					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF (255d) back, branch
-	addiu	v0, r0, 1					; Return a value of 1 [DELAY SLOT]
-	
-	; BYTE 1 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'ping command'
-	li		a0, 0x20					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bnez	v0, .Lerror 				; If we do not get 0x00 back, branch
-	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
-	
-	; BYTE 2 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bnez	v0, .Lerror 				; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	; BYTE 3 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bnez	v0, .Lerror 				; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	; BYTE 4 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'card present'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0x27, .Lerror 			; If we do not get 0x27 back, branch
-	addiu	v0, r0, 4					; Return a value of 4 [DELAY SLOT]
-	
-	; BYTE 5 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF back, branch
-	addiu	v0, r0, 5					; Return a value of 5 [DELAY SLOT]
-	; ------------------------------------------------------------------------
-	
-	addiu	v0, r0, 0					; No errors (return a value of 0)
-.Lerror
-	sb		r0, JOY_TXRX(t0)			; Get the end byte
-	nop
-	
-	sh		r0, JOY_CTRL(t0)			; Apparently required
-
-	lw		ra, 0(sp)
-	addiu	sp, 4
-	jr		ra
-	nop
 
 
 ; arguments:
@@ -193,6 +59,12 @@ MemCardPro_SendGameID:
 	addiu	sp, -4
 	sw		ra, 0(sp)
 
+	; Add 1 to the string length to include a trailing 0
+	; without passing that burdern to the caller
+	; i.e. allow the developer to pass strlen(gameid)
+	; (MCPro still accepts the unterminated packet but this is cleaner)
+	addiu	a1,	1
+
 	lui		t0, IOBASE
 	
 	li		v0, 0x1003					; TX Enable, joypad port select
@@ -203,7 +75,7 @@ MemCardPro_SendGameID:
 	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
 	
 	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
+	li		a0, JOY_DELAY_COUNTER
 .Lread_empty_fifo_write:				; Flush the RX FIFO just in case
 	lbu		v1, JOY_TXRX(t0)
 	lhu		v0, JOY_STAT(t0)
@@ -222,7 +94,7 @@ MemCardPro_SendGameID:
 	li		a0, 0x81					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -236,21 +108,33 @@ MemCardPro_SendGameID:
 	li		a0, 0x21					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
 	;nop
 	
-	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
+	; This response may be 0x00 or 0x08 (MCPro and regular cards)
+	; Depending on when you do the ping, so we can accept both
+
+	beqz	v0,	.Lvalidresponse			; We got the 0x00 ping response
+	nop
+
+	subiu	v0,	0x08					; We got the 0x08 ping response
+	beqz	v0,	.Lvalidresponse
+	nop
+
+	b		.Lerror 					; If we do not get 0x00 back, branch
 	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
-	
+
+.Lvalidresponse
+
 	; BYTE 2 -----------------------------------------------------------------
 	;jal		MemCardPro_Exchng			; Send 'reserved'
 	;li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -264,7 +148,7 @@ MemCardPro_SendGameID:
 	li		a0, 0x00					; [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -278,7 +162,7 @@ MemCardPro_SendGameID:
 	move	a0, a1						; copy a1 to a0 [DELAY SLOT]
 	
 	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
+	;li		a0, JOY_DELAY_COUNTER
 	
 	; return the result now (debugging)
 	;b		.Lerror
@@ -310,6 +194,220 @@ MemCardPro_SendGameID:
 	nop
 
 
+
+; a0 = port number
+; a1 = 0x22, 0x23, 0x24, or 0x24 to increment or decrement channels.
+; a2 = expected response (0x27 for ping, 0x20 for channel/dir switches) 
+; a2 & 0x100 = response is actually required
+MemcardPro_SimpleCommand:
+
+	addiu	sp, -4
+	sw		ra, 0(sp)
+
+	lui		t0, IOBASE
+	
+	li		v0, 0x1003					; TX Enable, joypad port select
+	andi	a0, 1
+	sll		a0, 13
+	or		v0, a0						; Select port 2 if a0 is 1
+	
+	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
+	
+	jal		MemCardPro_Wait
+	li		a0, JOY_DELAY_COUNTER
+.Lread_empty_fifo_write:				; Flush the RX FIFO just in case
+	lbu		v1, JOY_TXRX(t0)
+	lhu		v0, JOY_STAT(t0)
+	nop
+	andi	v0, 0x2
+	bnez	v0, .Lread_empty_fifo_write
+	nop
+	
+	lhu		v1, JOY_CTRL(t0)
+	nop
+	or		v1, 0x10
+	sh		v1, JOY_CTRL(t0)
+	
+	; BYTE 0 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send the 'bus select' byte
+	li		a0, 0x81					; [DELAY SLOT]
+	
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF (255d) back, branch
+	addiu	v0, r0, 1					; Return a value of 1 [DELAY SLOT]
+	
+	; BYTE 1 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send the 'next channel' byte
+	move	a0, a1						; [DELAY SLOT]
+	
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	; This response may be 0x00 or 0x08 (MCPro and regular cards)
+	; Depending on when you do the ping, so we can accept both
+
+	beqz	v0,	.Lvalidresponse			; We got the 0x00 ping response
+	nop
+
+	subiu	v0,	0x08					; We got the 0x08 ping response
+	beqz	v0,	.Lvalidresponse
+	nop
+
+	b		.Lerror 					; If we do not get 0x00 back, branch
+	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
+
+.Lvalidresponse
+	
+	; BYTE 2 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send 'reserved'
+	li		a0, 0x00					; [DELAY SLOT]
+	
+	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
+	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
+	
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
+	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
+
+	; BYTE 3 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send 'reserved'
+	li		a0, 0x00					; [DELAY SLOT]
+	
+	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
+	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
+	
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
+	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
+	
+	; BYTE 4 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send the 'success' check
+	li		a0, 0x00					; [DELAY SLOT]
+	
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	; Do we need a response for this packet type?
+	; Ping should always return 0x27
+	; But older/bugged firmwares may not return 0x20
+	; for directory switching, let's cover those cases
+	andi	a0,	a2,	0x100
+	beqz	a0, .Lresponse_not_required
+	nop
+
+	andi	a2,	a2, 0xFF
+	bne		v0,	a2, .Lerror 			; If we do not get 0x20/0x27 back, branch
+	addiu	v0, r0, 4					; Return a value of 4 [DELAY SLOT]
+	
+.Lresponse_not_required	
+	; BYTE 5 -----------------------------------------------------------------
+	jal		MemCardPro_Exchng			; Send the 'termination signal'
+	; Load 0x01 into the high word, since it's the last byte in the sequence
+	lui		a0, 0x01					; [DELAY SLOT]
+		
+	;jal		MemCardPro_Wait
+	;li		a0, JOY_DELAY_COUNTER
+	
+	; return the result now (debugging)
+	;b		.Lerror
+	;nop
+	
+	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF back, branch
+	addiu	v0, r0, 5					; Return a value of 5 [DELAY SLOT]
+	; ------------------------------------------------------------------------
+	
+	addiu	v0, r0, 0					; No errors (return a value of 0)
+.Lerror
+	sb		r0, JOY_TXRX(t0)			; Get the end byte
+	nop
+	
+	sh		r0, JOY_CTRL(t0)			; Apparently required
+
+	lw		ra, 0(sp)
+	addiu	sp, 4
+	jr		ra
+	nop
+
+
+
+; arguments:
+;	a0 (port number)
+;
+; return values:
+;	0 = no error (MemCard Pro detected)
+;	1 = bus select fail (no memory card device detected)
+;	2 = ping fail (no response from the MemCard Pro)
+;	3 = reserve fail (reserved for future use (ignore this))
+;	4 = card present fail (no card is present)
+;	5 = termination signal fail (no termination signal detected)
+MemCardPro_Ping:
+	
+	addiu	sp, -4
+	sw		ra, 0(sp)
+	
+	li		a2, 0x127
+	jal		MemcardPro_SimpleCommand
+	li 		a1,	0x20
+	
+	lw		ra, 0(sp)
+	addiu	sp, 4
+	jr		ra
+	nop
+
+
+	
+; arguments:
+;	a0 (port number)
+;
+; return values:
+;	0 = no error (MemCard Pro detected)
+;	1 = bus select fail (no memory card device detected)
+;	2 = next channel (failed to select the next channel)
+;	3 = reserve fail (reserved for future use (ignore this))
+;	4 = success fail (device success flag check failed)
+;	5 = termination signal fail (no termination signal detected)
+MemCardPro_NextCH:
+
+	addiu	sp, -4
+	sw		ra, 0(sp)
+	
+	li		a2, 0x20
+	jal		MemcardPro_SimpleCommand
+	li 		a1,	0x23
+	
+	lw		ra, 0(sp)
+	addiu	sp, 4
+	jr		ra
+	nop
+
+
+
 ; arguments:
 ;	a0 (port number)
 ;
@@ -324,289 +422,108 @@ MemCardPro_PrevCH:
 	addiu	sp, -4
 	sw		ra, 0(sp)
 
-	lui		t0, IOBASE
+	li		a2, 0x20
+	jal		MemcardPro_SimpleCommand
+	li 		a1,	0x22
 	
-	li		v0, 0x1003					; TX Enable, joypad port select
-	andi	a0, 1
-	sll		a0, 13
-	or		v0, a0						; Select port 2 if a0 is 1
-	
-	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
-	
-	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
-.Lread_empty_fifo_write:				; Flush the RX FIFO just in case
-	lbu		v1, JOY_TXRX(t0)
-	lhu		v0, JOY_STAT(t0)
-	nop
-	andi	v0, 0x2
-	bnez	v0, .Lread_empty_fifo_write
-	nop
-	
-	lhu		v1, JOY_CTRL(t0)
-	nop
-	or		v1, 0x10
-	sh		v1, JOY_CTRL(t0)
-	
-	; BYTE 0 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'bus select' byte
-	li		a0, 0x81					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF (255d) back, branch
-	addiu	v0, r0, 1					; Return a value of 1 [DELAY SLOT]
-	
-	; BYTE 1 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'previous channel' byte
-	li		a0, 0x22					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
-	
-	; BYTE 2 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-
-	; BYTE 3 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	; BYTE 4 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'success' check
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0x20, .Lerror 			; If we do not get 0x27 back, branch
-	addiu	v0, r0, 4					; Return a value of 4 [DELAY SLOT]
-	
-	; BYTE 5 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF back, branch
-	addiu	v0, r0, 5					; Return a value of 5 [DELAY SLOT]
-	; ------------------------------------------------------------------------
-	
-	addiu	v0, r0, 0					; No errors (return a value of 0)
-.Lerror
-	sb		r0, JOY_TXRX(t0)			; Get the end byte
-	nop
-	
-	sh		r0, JOY_CTRL(t0)			; Apparently required
-
 	lw		ra, 0(sp)
 	addiu	sp, 4
 	jr		ra
 	nop
 
-	
+
+
 ; arguments:
 ;	a0 (port number)
 ;
 ; return values:
 ;	0 = no error (MemCard Pro detected)
 ;	1 = bus select fail (no memory card device detected)
-;	2 = next channel (failed to select the next channel)
+;	2 = next channel (failed to select the next card)
 ;	3 = reserve fail (reserved for future use (ignore this))
 ;	4 = success fail (device success flag check failed)
 ;	5 = termination signal fail (no termination signal detected)
-MemCardPro_NextCH:
+MemCardPro_NextDIR:
+
 	addiu	sp, -4
 	sw		ra, 0(sp)
 
-	lui		t0, IOBASE
+	li		a2, 0x20
+	jal		MemcardPro_SimpleCommand
+	li 		a1,	0x25
 	
-	li		v0, 0x1003					; TX Enable, joypad port select
-	andi	a0, 1
-	sll		a0, 13
-	or		v0, a0						; Select port 2 if a0 is 1
-	
-	sh		v0, JOY_CTRL(t0)			; Set to Joypad control interface
-	
-	jal		MemCardPro_Wait
-	li		t1, JOY_DELAY_COUNTER
-.Lread_empty_fifo_write:				; Flush the RX FIFO just in case
-	lbu		v1, JOY_TXRX(t0)
-	lhu		v0, JOY_STAT(t0)
-	nop
-	andi	v0, 0x2
-	bnez	v0, .Lread_empty_fifo_write
-	nop
-	
-	lhu		v1, JOY_CTRL(t0)
-	nop
-	or		v1, 0x10
-	sh		v1, JOY_CTRL(t0)
-	
-	; BYTE 0 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'bus select' byte
-	li		a0, 0x81					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF (255d) back, branch
-	addiu	v0, r0, 1					; Return a value of 1 [DELAY SLOT]
-	
-	; BYTE 1 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'next channel' byte
-	li		a0, 0x23					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
-	
-	; BYTE 2 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-
-	; BYTE 3 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send 'reserved'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	bnez	v0, .Lerror		 			; If we do not get 0x00 back, branch
-	addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	;bne		v0, 0x00, .Lerror 			; If we do not get 0x00 back, branch
-	;addiu	v0, r0, 3					; Return a value of 3 [DELAY SLOT]
-	
-	; BYTE 4 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'success' check
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0x20, .Lerror 			; If we do not get 0x27 back, branch
-	addiu	v0, r0, 4					; Return a value of 4 [DELAY SLOT]
-	
-	; BYTE 5 -----------------------------------------------------------------
-	jal		MemCardPro_Exchng			; Send the 'termination signal'
-	li		a0, 0x00					; [DELAY SLOT]
-	
-	;jal		MemCardPro_Wait
-	;li		t1, JOY_DELAY_COUNTER
-	
-	; return the result now (debugging)
-	;b		.Lerror
-	;nop
-	
-	bne		v0, 0xFF, .Lerror 			; If we do not get 0xFF back, branch
-	addiu	v0, r0, 5					; Return a value of 5 [DELAY SLOT]
-	; ------------------------------------------------------------------------
-	
-	addiu	v0, r0, 0					; No errors (return a value of 0)
-.Lerror
-	sb		r0, JOY_TXRX(t0)			; Get the end byte
-	nop
-	
-	sh		r0, JOY_CTRL(t0)			; Apparently required
-
 	lw		ra, 0(sp)
 	addiu	sp, 4
 	jr		ra
 	nop
 
 
-; handler/processor
-MemCardPro_Exchng:
-	lui		t0, IOBASE
+
+; arguments:
+;	a0 (port number)
+;
+; return values:
+;	0 = no error (MemCard Pro detected)
+;	1 = bus select fail (no memory card device detected)
+;	2 = previous channel (failed to select the previous card)
+;	3 = reserve fail (reserved for future use (ignore this))
+;	4 = success fail (device success flag check failed)
+;	5 = termination signal fail (no termination signal detected)
+MemCardPro_PrevDIR:
+	addiu	sp, -4
+	sw		ra, 0(sp)
+
+	li		a2, 0x20
+	jal		MemcardPro_SimpleCommand
+	li 		a1,	0x24
 	
+	lw		ra, 0(sp)
+	addiu	sp, 4
+	jr		ra
+	nop
+
+
+
+; handler/processor
+; a0 = byte to send
+; a0 & 0x000010000 == final byte in the sequnce, do not wait for /ACK
+MemCardPro_Exchng:
+
+	addiu	sp, -4
+	sw		ra, 0(sp)
+		
+	; We don't need to /ACK the final byte in a sequence
+	; so we can return early if this bit is set.
+	lui		t0, 0x01
+	li		t1,	0x00
+	and		t0,	a0,	t0
+	beqz	t0,	.Lno_final_byte
+	nop
+
+	; It's the last byte in the sequence, so
+	; set t1 for an early return
+	li		t1,0x01
+
+.Lno_final_byte	
+
+	lui		t0, IOBASE
+
 	sb		a0, JOY_TXRX(t0)
 	nop
+
 .Lsend_wait_exchg:
 	lhu		v0, JOY_STAT(t0)
 	nop
-	andi	v0, 0x4 ; JOY_STAT value
+	andi	v0, 0x2 ; JOY_STAT value
 	beqz	v0, .Lsend_wait_exchg
 	nop
-	
+
+	; We've got a byte waiting in the RX buffer
+	; But it's the last in the sequence, so 
+	; We don't need to wait for an /ACK
+	bnez	t1, .Ldone
+	nop
+
 	lui		a0, 0xBFC0
 	move	v1, r0 ; set v1 to zero
 .Lwait_ack_exchg:
@@ -633,18 +550,51 @@ MemCardPro_Exchng:
 	or		v1, 0x10
 	sh		v1, JOY_CTRL(t0)
 .Lexit_exchg:
+
+	; Add a standard delay to pad us out to about 18us
+	; Not strictly necessary, but it's not a noticable delay
+	; and falls roughly in line with other implementations
+	
+	jal MemCardPro_Wait
+	li		a0,0x70
+
+	lw		ra, 0(sp)
+	nop		
+	addiu	sp, 4
 	jr		ra
 	nop
 
 
+
 ; simple delay loop (each instruction adds 1 cycle so a wait of 150 in t1 results in 500 cycles)
+; a0 = delay
 MemCardPro_Wait:
-    addiu   t1, -1
-    bgtz    t1, MemCardPro_Wait
+    addiu   a0, -1
+    bgtz    a0, MemCardPro_Wait
     nop
 	
     jr      ra
     nop
+
+
+
+; No params, will wait long enough to do a ping followed by a 
+; SendGameID on the same frame
+; (with a lot of wiggle room; 2.5ms in this case)
+; Where possible, just wait a frame instead.
+MemcardPro_InterCommandDelay:
+
+	addiu	sp, -4
+	sw		ra, 0(sp)
+	
+	li 		a0, 0x7000
+	jal		MemCardPro_Wait
+
+	lw		ra, 0(sp)
+	nop		
+	addiu	sp, 4
+	jr		ra
+	nop
 
 
 ; includes
