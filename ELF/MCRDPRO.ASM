@@ -92,10 +92,10 @@ MemCardPro_SendGameID:
 	#li		$a0, JOY_DELAY_COUNTER
 	
 	# return the result now (debugging)
-	#b		.Lerror
+	#b		.Lgameid_error
 	#nop
 	
-	bne		$v0, 0xFF, .Lerror 			# If we do not get 0xFF (255d) back, branch
+	bne		$v0, 0xFF, .Lgameid_error 			# If we do not get 0xFF (255d) back, branch
 	addiu	$v0, $zero, 1				# Return a value of 1 [DELAY SLOT]
 	
 	# BYTE 1 -----------------------------------------------------------------
@@ -106,7 +106,7 @@ MemCardPro_SendGameID:
 	#li		$a0, JOY_DELAY_COUNTER
 	
 	# return the result now (debugging)
-	#b		.Lerror
+	#b		.Lgameid_error
 	#nop
 	
 	# This response may be 0x00 or 0x08 (MCPro and regular cards)
@@ -120,7 +120,7 @@ MemCardPro_SendGameID:
 	beq 	$v0, $zero, .LvalidresponseA
 	nop
 
-	b		.Lerror 					# If we do not get 0x00 back, branch
+	b		.Lgameid_error 					# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 2				# Return a value of 2 [DELAY SLOT]
 .LvalidresponseA:
 	# BYTE 2 -----------------------------------------------------------------
@@ -131,10 +131,10 @@ MemCardPro_SendGameID:
 	#li		$a0, JOY_DELAY_COUNTER
 	
 	# return the result now (debugging)
-	#b		.Lerror
+	#b		.Lgameid_error
 	#nop
 	
-	#bnez	$v0, .Lerror		 		# If we do not get 0x00 back, branch
+	#bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
 	#addiu	$v0, $zero, 3				# Return a value of 3 [DELAY SLOT]
 	
 	# BYTE 3 -----------------------------------------------------------------
@@ -145,10 +145,10 @@ MemCardPro_SendGameID:
 	#li		$a0, JOY_DELAY_COUNTER
 	
 	# return the result now (debugging)
-	#b		.Lerror
+	#b		.Lgameid_error
 	#nop
 	
-	bnez	$v0, .Lerror		 		# If we do not get 0x00 back, branch
+	bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 3				# Return a value of 3 [DELAY SLOT]
 	
 	# BYTE 4 -----------------------------------------------------------------
@@ -159,10 +159,10 @@ MemCardPro_SendGameID:
 	#li		$a0, JOY_DELAY_COUNTER
 	
 	# return the result now (debugging)
-	#b		.Lerror
+	#b		.Lgameid_error
 	#nop
 	
-	bnez	$v0, .Lerror		 		# If we do not get 0x00 back, branch
+	bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 4				# Return a value of 4 [DELAY SLOT]
 	
 	# BYTE 5 -----------------------------------------------------------------
@@ -176,6 +176,18 @@ MemCardPro_SendGameID:
 	# ------------------------------------------------------------------------
 	
 	addiu	$v0, $zero, 0				# No errors (return a value of 0)
+
+# error handler	
+.Lgameid_error:
+	sb		$zero, JOY_TXRX($t0)		# Get the end byte
+	nop
+	
+	sh		$zero, JOY_CTRL($t0)		# Apparently required
+
+	lw		$ra, 0($sp)
+	addiu	$sp, 4
+	jr		$ra
+	nop
 
 
 # $a0 = port number
