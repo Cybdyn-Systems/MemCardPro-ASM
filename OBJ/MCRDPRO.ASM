@@ -128,7 +128,6 @@ MemCardPro_SendGameID:
 	addiu	v0, r0, 2					; Return a value of 2 [DELAY SLOT]
 
 .Lvalidresponse
-
 	; BYTE 2 -----------------------------------------------------------------
 	;jal		MemCardPro_Exchng			; Send 'reserved'
 	;li		a0, 0x00					; [DELAY SLOT]
@@ -488,10 +487,9 @@ MemCardPro_PrevDIR:
 ; a0 = byte to send
 ; a0 & 0x000010000 == final byte in the sequnce, do not wait for /ACK
 MemCardPro_Exchng:
-
 	addiu	sp, -4
 	sw		ra, 0(sp)
-		
+	
 	; We don't need to /ACK the final byte in a sequence
 	; so we can return early if this bit is set.
 	lui		t0, 0x01
@@ -503,14 +501,11 @@ MemCardPro_Exchng:
 	; It's the last byte in the sequence, so
 	; set t1 for an early return
 	li		t1,0x01
-
 .Lno_final_byte	
-
 	lui		t0, IOBASE
 
 	sb		a0, JOY_TXRX(t0)
 	nop
-
 .Lsend_wait_exchg:
 	lhu		v0, JOY_STAT(t0)
 	nop
