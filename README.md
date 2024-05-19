@@ -1,6 +1,7 @@
 # MemCard Pro Command Handler for the PlayStation
 
 Special Thanks to [Lameguy64](https://github.com/Lameguy64) and [JonathanDotCel](https://github.com/JonathanDotCel).
+[MemCard Pro Documentation/Transmission Information](https://gitlab.com/chriz2600/ps1-game-id-transmission)
 
 ## Prerequisites
 
