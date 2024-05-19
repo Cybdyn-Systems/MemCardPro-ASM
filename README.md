@@ -1,4 +1,4 @@
-# MemCard Pro Command Handler for the PlayStation MIPS R3000
+# MemCard Pro Command Handler for the PlayStation
 
 Special Thanks to [Lameguy64](https://github.com/Lameguy64) and [JonathanDotCel](https://github.com/JonathanDotCel).
 
@@ -14,7 +14,7 @@ Steps to be taken if you are going to be working on the code base:
 Setup and Installation:
 
 1. Clone the repository.
-2. Assemble the codebase.
+2. Assemble the codebase for the Sony MIPS R3000.
 3. Link the object in your codebase.
 4. Use the included header file in your C code.
 
