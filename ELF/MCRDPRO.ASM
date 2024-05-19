@@ -17,13 +17,13 @@
 # limitations under the License.
 #=======================================================================================
 
-# no opcode reordering
+# No opcode reordering
 .set noreorder
 
-# link this in the 'text' section
+# Link this in the 'text' section
 .section .text
 	
-# function prototypes
+# Function prototypes
 .global MemCardPro_Ping
 .global MemCardPro_SendGameID
 .global MemCardPro_PrevCH
@@ -35,15 +35,16 @@
 .global MemcardPro_SimpleCommand
 .global MemcardPro_InterCommandDelay
 
+# Variables
 .equ JOY_DELAY_COUNTER, 170 # 170 * 3 instructions = 510 cycles
 
 
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #	$a1 (string length)
 #	$a2 (string data (251 bytes maximum))
 #
-# return values:
+# Return values:
 #	0 = no error (MemCard Pro detected)
 #	1 = bus select fail (no memory card device detected)
 #	2 = game ID command start (failed to send the game ID command)
@@ -54,10 +55,9 @@ MemCardPro_SendGameID:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 
-	# Add 1 to the string length to include a trailing 0
-	# without passing that burdern to the caller
-	# i.e. allow the developer to pass strlen(gameid)
-	# (MCPro still accepts the unterminated packet but this is cleaner)
+	# Add 1 to the string length to include a trailing 0 without passing that burdern to the caller
+	# IE: Allow the developer to pass 'strlen(gameid)'
+	# NOTE: The MemCard Pro still accepts the unterminated packet but this is cleaner
 	addiu	$a1,	1
 
 	lui		$t0, IOBASE
@@ -95,7 +95,7 @@ MemCardPro_SendGameID:
 	#b		.Lgameid_error
 	#nop
 	
-	bne		$v0, 0xFF, .Lgameid_error 			# If we do not get 0xFF (255d) back, branch
+	bne		$v0, 0xFF, .Lgameid_error 	# If we do not get 0xFF (255d) back, branch
 	addiu	$v0, $zero, 1				# Return a value of 1 [DELAY SLOT]
 	
 	# BYTE 1 -----------------------------------------------------------------
@@ -109,18 +109,17 @@ MemCardPro_SendGameID:
 	#b		.Lgameid_error
 	#nop
 	
-	# This response may be 0x00 or 0x08 (MCPro and regular cards)
-	# Depending on when you do the ping, so we can accept both
-
+	# This response may be 0x00 or 0x08 MemCard Pro and Sony cards) depending on when you do the ping
 	# We got the 0x00 ping response
 	beq 	$v0, $zero, .LvalidresponseA
 	nop
 
-	addiu 	$v0, $v0, -0x08				# We got the 0x08 ping response
+	# We got the 0x08 ping response
+	addiu 	$v0, $v0, -0x08
 	beq 	$v0, $zero, .LvalidresponseA
 	nop
 
-	b		.Lgameid_error 					# If we do not get 0x00 back, branch
+	b		.Lgameid_error 				# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 2				# Return a value of 2 [DELAY SLOT]
 .LvalidresponseA:
 	# BYTE 2 -----------------------------------------------------------------
@@ -134,7 +133,7 @@ MemCardPro_SendGameID:
 	#b		.Lgameid_error
 	#nop
 	
-	#bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
+	#bnez	$v0, .Lgameid_error		 	# If we do not get 0x00 back, branch
 	#addiu	$v0, $zero, 3				# Return a value of 3 [DELAY SLOT]
 	
 	# BYTE 3 -----------------------------------------------------------------
@@ -148,7 +147,7 @@ MemCardPro_SendGameID:
 	#b		.Lgameid_error
 	#nop
 	
-	bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
+	bnez	$v0, .Lgameid_error		 	# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 3				# Return a value of 3 [DELAY SLOT]
 	
 	# BYTE 4 -----------------------------------------------------------------
@@ -162,7 +161,7 @@ MemCardPro_SendGameID:
 	#b		.Lgameid_error
 	#nop
 	
-	bnez	$v0, .Lgameid_error		 		# If we do not get 0x00 back, branch
+	bnez	$v0, .Lgameid_error		 	# If we do not get 0x00 back, branch
 	addiu	$v0, $zero, 4				# Return a value of 4 [DELAY SLOT]
 	
 	# BYTE 5 -----------------------------------------------------------------
@@ -195,7 +194,6 @@ MemCardPro_SendGameID:
 # $a2 = expected response (0x27 for ping, 0x20 for channel/dir switches) 
 # $a2 & 0x100 = response is actually required
 MemcardPro_SimpleCommand:
-
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 
@@ -248,9 +246,7 @@ MemcardPro_SimpleCommand:
 	#b		.Lerror
 	#nop
 	
-	# This response may be 0x00 or 0x08 (MCPro and regular cards)
-	# Depending on when you do the ping, so we can accept both
-
+	# This response may be 0x00 or 0x08 (MemCard Pro and Sony cards) depending on when you do the ping
 	# We got the 0x00 ping response
 	beq 	$v0, $zero, .LvalidresponseB
 	nop
@@ -306,24 +302,21 @@ MemcardPro_SimpleCommand:
 	# return the result now (debugging)
 	#b		.Lerror
 	#nop
-	
-	# Do we need a response for this packet type?
+
 	# Ping should always return 0x27
-	# But older/bugged firmwares may not return 0x20
-	# for directory switching, let's cover those cases
-	andi	$a0,	$a2,	0x100
+	# NOTE: Older/bugged firmwares may not return 0x20 for directory switching (we'll cover those cases anyway)
+	andi	$a0, $a2, 0x100
 	beq 	$a0, $zero, .Lresponse_not_required
 	nop
 
-	andi	$a2,	$a2, 0xFF
-	bne		$v0,	$a2, .Lerror 		# If we do not get 0x20/0x27 back, branch
+	andi	$a2, $a2, 0xFF
+	bne		$v0, $a2, .Lerror 			# If we do not get 0x20/0x27 back, branch
 	addiu	$v0, $zero, 4				# Return a value of 4 [DELAY SLOT]
 .Lresponse_not_required:
 	# BYTE 5 -----------------------------------------------------------------
 	jal		MemCardPro_Exchng			# Send the 'termination signal'
-	# Load 0x01 into the high word, since it's the last byte in the sequence
-	lui		$a0, 0x01					# [DELAY SLOT]
-		
+	lui		$a0, 0x01					# Load 0x01 into the high word, since it's the last byte in the sequence [DELAY SLOT]
+	
 	#jal	MemCardPro_Wait
 	#li		$a0, JOY_DELAY_COUNTER
 	
@@ -351,46 +344,46 @@ MemcardPro_SimpleCommand:
 	nop
 
 
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #
-# return values:
-#	0 = no error (MemCard Pro detected)
-#	1 = bus select fail (no memory card device detected)
-#	2 = ping fail (no response from the MemCard Pro)
-#	3 = reserve fail (reserved for future use (ignore this))
-#	4 = card present fail (no card is present)
-#	5 = termination signal fail (no termination signal detected)
+# Return values:
+#	0 = No error (MemCard Pro detected)
+#	1 = Bus select fail (no memory card device detected)
+#	2 = Ping fail (no response from the MemCard Pro)
+#	3 = Reserve fail (reserved for future use (ignore this))
+#	4 = Card present fail (no card is present)
+#	5 = Termination signal fail (no termination signal detected)
 MemCardPro_Ping:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 	
 	li		$a2, 0x127
 	jal		MemcardPro_SimpleCommand
-	li 		$a1,	0x20
+	li 		$a1, 0x20
 	
 	lw		$ra, 0($sp)
 	addiu	$sp, 4
 	jr		$ra
 	nop
 	
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #
-# return values:
-#	0 = no error (MemCard Pro detected)
-#	1 = bus select fail (no memory card device detected)
-#	2 = next channel (failed to select the next channel)
-#	3 = reserve fail (reserved for future use (ignore this))
-#	4 = success fail (device success flag check failed)
-#	5 = termination signal fail (no termination signal detected)
+# Return values:
+#	0 = No error (MemCard Pro detected)
+#	1 = Bus select fail (no memory card device detected)
+#	2 = Next channel (failed to select the next channel)
+#	3 = Reserve fail (reserved for future use (ignore this))
+#	4 = Success fail (device success flag check failed)
+#	5 = Termination signal fail (no termination signal detected)
 MemCardPro_NextCH:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 	
 	li		$a2, 0x20
 	jal		MemcardPro_SimpleCommand
-	li 		$a1,	0x23
+	li 		$a1, 0x23
 	
 	lw		$ra, 0($sp)
 	addiu	$sp, 4
@@ -398,23 +391,23 @@ MemCardPro_NextCH:
 	nop
 
 
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #
-# return values:
-#	0 = no error (MemCard Pro detected)
-#	1 = bus select fail (no memory card device detected)
-#	2 = previous channel (failed to select the previous channel)
-#	3 = reserve fail (reserved for future use (ignore this))
-#	4 = success fail (device success flag check failed)
-#	5 = termination signal fail (no termination signal detected)
+# Return values:
+#	0 = No error (MemCard Pro detected)
+#	1 = Bus select fail (no memory card device detected)
+#	2 = Previous channel (failed to select the previous channel)
+#	3 = Reserve fail (reserved for future use (ignore this))
+#	4 = Success fail (device success flag check failed)
+#	5 = Termination signal fail (no termination signal detected)
 MemCardPro_PrevCH:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 
 	li		$a2, 0x20
 	jal		MemcardPro_SimpleCommand
-	li 		$a1,	0x22
+	li 		$a1, 0x22
 	
 	lw		$ra, 0($sp)
 	addiu	$sp, 4
@@ -422,23 +415,23 @@ MemCardPro_PrevCH:
 	nop
 
 
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #
-# return values:
-#	0 = no error (MemCard Pro detected)
-#	1 = bus select fail (no memory card device detected)
-#	2 = next channel (failed to select the next card)
-#	3 = reserve fail (reserved for future use (ignore this))
-#	4 = success fail (device success flag check failed)
-#	5 = termination signal fail (no termination signal detected)
+# Return values:
+#	0 = No error (MemCard Pro detected)
+#	1 = Bus select fail (no memory card device detected)
+#	2 = Next channel (failed to select the next card)
+#	3 = Reserve fail (reserved for future use (ignore this))
+#	4 = Success fail (device success flag check failed)
+#	5 = Termination signal fail (no termination signal detected)
 MemCardPro_NextDIR:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 
 	li		$a2, 0x20
 	jal		MemcardPro_SimpleCommand
-	li 		$a1,	0x25
+	li 		$a1, 0x25
 	
 	lw		$ra, 0($sp)
 	addiu	$sp, 4
@@ -446,23 +439,23 @@ MemCardPro_NextDIR:
 	nop
 
 
-# arguments:
+# Arguments:
 #	$a0 (port number)
 #
-# return values:
-#	0 = no error (MemCard Pro detected)
-#	1 = bus select fail (no memory card device detected)
-#	2 = previous channel (failed to select the previous card)
-#	3 = reserve fail (reserved for future use (ignore this))
-#	4 = success fail (device success flag check failed)
-#	5 = termination signal fail (no termination signal detected)
+# Return values:
+#	0 = No error (MemCard Pro detected)
+#	1 = Bus select fail (no memory card device detected)
+#	2 = Previous channel (failed to select the previous card)
+#	3 = Reserve fail (reserved for future use (ignore this))
+#	4 = Success fail (device success flag check failed)
+#	5 = Termination signal fail (no termination signal detected)
 MemCardPro_PrevDIR:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 
 	li		$a2, 0x20
 	jal		MemcardPro_SimpleCommand
-	li 		$a1,	0x24
+	li 		$a1, 0x24
 	
 	lw		$ra, 0($sp)
 	addiu	$sp, 4
@@ -470,24 +463,22 @@ MemCardPro_PrevDIR:
 	nop
 
 
-# handler/processor
+# Handler
 # $a0 = byte to send
-# $a0 & 0x000010000 == final byte in the sequnce (do not wait for /ACK)
+# $a0 & 0x000010000 == Final byte in the sequence (do not wait for /ACK)
 MemCardPro_Exchng:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 	
-	# We don't need to /ACK the final byte in a sequence
-	# so we can return early if this bit is set.
+	# We don't need to /ACK the final byte in a sequence so we can return early if this bit is set.
 	lui		$t0, 0x01
-	li		$t1,	0x00
-	and		$t0,	$a0,	$t0
+	li		$t1, 0x00
+	and		$t0, $a0, $t0
 	beq 	$t0, $zero, .Lno_final_byte
 	nop
 	
-	# It's the last byte in the sequence, so
-	# set $t1 for an early return
-	li		$t1,0x01
+	# It's the last byte in the sequence, so set $t1 for an early return
+	li		$t1, 0x01
 .Lno_final_byte:
 	lui		$t0, IOBASE
 
@@ -501,16 +492,14 @@ MemCardPro_Exchng:
 	beq 	$v0, $zero, .Lsend_wait_exchg
 	nop
 
-	# We've got a byte waiting in the RX buffer
-	# But it's the last in the sequence, so 
-	# We don't need to wait for an /ACK
+	# We've got a byte waiting in the RX buffer but it's the last in the sequence so we don't need to wait for /ACK
 	bnez	$t1, .Ldone
 	nop
 
 	lui		$a0, 0xBFC0
 	move	$v1, $zero # set $v1 to zero
 .Lwait_ack_exchg:
-	bgt		$v1, 4500, .Ltimeout # ACK delay (4500 * 7 instructions = 31,500 cycles)
+	bgt		$v1, 4500, .Ltimeout 		# ACK delay (4500 * 7 instructions = 31,500 cycles)
 	nop
 	lhu		$v0, JOY_STAT($t0)
 	lw		$zero, 4($a0)
@@ -525,7 +514,7 @@ MemCardPro_Exchng:
 	lbu		$v0, JOY_TXRX($t0)
 	nop
 	b		.Lexit_exchg
-	#ori		$v0, 0x100				# Add 0x100 (used as a timeout flag on bit 8 of the $v0 register. we could use andi and mask it, but we'll just nop it)
+	#ori	$v0, 0x100					# Add 0x100 (used as a timeout flag on bit 8 of the $v0 register. we could use andi and mask it, but we'll just nop it)
 	nop
 .Ldone:
 	lhu		$v1, JOY_CTRL($t0)
@@ -534,8 +523,7 @@ MemCardPro_Exchng:
 	sh		$v1, JOY_CTRL($t0)
 .Lexit_exchg:
 	# Add a standard delay to pad us out to about 18us
-	# Not strictly necessary, but it's not a noticable delay
-	# and falls roughly in line with other implementations
+	# Not strictly necessary, but it's not a noticable delay and falls roughly in line with other implementations
 	jal MemCardPro_Wait
 	li		$a0,0x70
 
@@ -546,7 +534,7 @@ MemCardPro_Exchng:
 	nop
 
 
-# simple delay loop (each instruction adds 1 cycle so a wait of 150 in $t1 results in 500 cycles)
+# Simple delay loop (each instruction adds 1 cycle so a wait of 150 in $t1 results in 500 cycles)
 # $a0 = delay
 MemCardPro_Wait:
     addiu   $a0, -1
@@ -557,16 +545,15 @@ MemCardPro_Wait:
     nop
 
 
-# No pa$rams, will wait long enough to do a ping followed by a 
-# SendGameID on the same f$rame
-# (with a lot of wiggle room# 2.5ms in this case)
-# Where possible, just wait a f$rame instead.
+# No params (will wait long enough to do a ping followed by
+# a 'SendGameID()' on the same frame (2.5ms in this case)
 MemcardPro_InterCommandDelay:
 	addiu	$sp, -4
 	sw		$ra, 0($sp)
 	
 	li 		$a0, 0x7000
 	jal		MemCardPro_Wait
+	nop
 
 	lw		$ra, 0($sp)
 	nop		
